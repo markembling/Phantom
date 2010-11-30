@@ -1,6 +1,6 @@
 #region License
 
-// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk)
+// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk) and Contributors
 // 
 // Licensed under the Microsoft Public License. You may
 // obtain a copy of the license at:
@@ -11,14 +11,13 @@
 // to be bound by the terms of the Microsoft Public License.
 // 
 // You must not remove this notice, or any other, from this software.
-// 
-// The latest version of this file can be found at http://github.com/JeremySkinner/Phantom
 
 #endregion
 
 namespace Phantom.Core.Builtins {
 	using Boo.Lang.Compiler;
 	using Boo.Lang.Compiler.Ast;
+	using Language;
 
 	/// <summary>
 	/// The 'with' macro can be used to turn this:
@@ -48,14 +47,19 @@ namespace Phantom.Core.Builtins {
 	/// This would be much simpler if I wrote the macro in Boo rather than C#, but I thought this would be fun...
 	/// </summary>
 	public class WithMacro : AbstractAstMacro {
-
 		public override Statement Expand(MacroStatement macro) {
-			if(macro.Arguments.Count != 1) {
+			if (macro.Arguments.Count != 1) {
 				throw new ScriptParsingException("'with' must be called with only a single argument followed by a block.");
 			}
 
 			var arg = macro.Arguments[0];
 			var instanceExpression = ConvertExpressionToTemporaryVariable(arg, macro.Body);
+			var runnableParser = new RunnableParser(NameResolutionService);
+
+			if (runnableParser.IsRunnable(arg)) {
+				AddRunExpressionToBody(macro.Body, instanceExpression);
+			}
+
 			var visitor = new OmittedReferenceVisitor(instanceExpression);
 
 			visitor.Visit(macro.Body);
@@ -63,10 +67,10 @@ namespace Phantom.Core.Builtins {
 			return macro.Body;
 		}
 
-        Expression ConvertExpressionToTemporaryVariable(Expression methodInvocation, Block block) {
+		Expression ConvertExpressionToTemporaryVariable(Expression methodInvocation, Block block) {
 			var temporaryVariable = new ReferenceExpression(Context.GetUniqueName("with"));
 
-			var assignment = new BinaryExpression {
+			var assignment = new WithBinaryExpression {
 				Operator = BinaryOperatorType.Assign,
 				Left = Expression.Lift(temporaryVariable),
 				Right = methodInvocation
@@ -77,7 +81,12 @@ namespace Phantom.Core.Builtins {
 			return temporaryVariable;
 		}
 
-		private class OmittedReferenceVisitor : DepthFirstTransformer {
+		void AddRunExpressionToBody(Block block, Expression temporaryVariable) {
+			var method = new MethodInvocationExpression(new MemberReferenceExpression(temporaryVariable, "Run"));
+			block.Add(method);
+		}
+
+		class OmittedReferenceVisitor : DepthFirstTransformer {
 			readonly Expression instanceExpr;
 
 			public OmittedReferenceVisitor(Expression instanceExpr) {
@@ -89,6 +98,9 @@ namespace Phantom.Core.Builtins {
 					node.Target = instanceExpr;
 				}
 			}
+		}
+
+		public class WithBinaryExpression : BinaryExpression {
 		}
 	}
 }

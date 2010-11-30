@@ -1,6 +1,6 @@
 #region License
 
-// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk)
+// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk) and Contributors
 // 
 // Licensed under the Microsoft Public License. You may
 // obtain a copy of the license at:
@@ -11,22 +11,37 @@
 // to be bound by the terms of the Microsoft Public License.
 // 
 // You must not remove this notice, or any other, from this software.
-// 
-// The latest version of this file can be found at http://github.com/JeremySkinner/Phantom
 
 #endregion
 
 namespace Phantom.Core {
 	using System;
+	using System.Collections.Generic;
+	using System.ComponentModel.Composition;
+	using System.ComponentModel.Composition.Hosting;
+	using System.Diagnostics;
+	using System.IO;
 	using System.Linq;
+	using System.Reflection;
+	using Integration;
 	using Rhino.DSL;
 
+	[Export]
 	public class BuildRunner {
-		static readonly DslFactory dslFactory;
+		readonly DslFactory dslFactory;
 
-		static BuildRunner() {
+		[ImportingConstructor]
+		public BuildRunner([ImportMany] IEnumerable<ITaskImportBuilder> taskImportBuilders) {
 			dslFactory = new DslFactory();
-			dslFactory.Register<PhantomBase>(new PhantomDslEngine());
+			dslFactory.Register<PhantomBase>(
+				new PhantomDslEngine(taskImportBuilders.ToArray())
+			);
+		}
+
+		public static BuildRunner Create() {
+			var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			var container = new CompositionContainer(new DirectoryCatalog(directory));
+			return container.GetExportedValue<BuildRunner>();
 		}
 
 		public ScriptModel GenerateBuildScript(string path) {
@@ -36,6 +51,9 @@ namespace Phantom.Core {
 		}
 
 		public void Execute(PhantomOptions options) {
+			if (options.AttachDebugger && !Debugger.IsAttached)
+				Debugger.Launch();
+
 			var script = GenerateBuildScript(options.File);
 			script.ExecuteTargets(options.TargetNames.ToArray());
 		}

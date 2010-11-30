@@ -1,6 +1,6 @@
 #region License
 
-// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk)
+// Copyright Jeremy Skinner (http://www.jeremyskinner.co.uk) and Contributors
 // 
 // Licensed under the Microsoft Public License. You may
 // obtain a copy of the license at:
@@ -11,8 +11,6 @@
 // to be bound by the terms of the Microsoft Public License.
 // 
 // You must not remove this notice, or any other, from this software.
-// 
-// The latest version of this file can be found at http://github.com/JeremySkinner/Phantom
 
 #endregion
 
@@ -25,7 +23,7 @@ namespace Phantom.Core {
 	}
 
 	public class RecursiveDependencyException : PhantomException {
-		public RecursiveDependencyException(string targetName) 
+		public RecursiveDependencyException(string targetName)
 			: base(string.Format("Detected recursive dependency for target '{0}'", targetName)) {
 			TargetName = targetName;
 		}
@@ -35,11 +33,11 @@ namespace Phantom.Core {
 
 	public class TargetAlreadyExistsException : PhantomException {
 		public TargetAlreadyExistsException(string name)
-			: base(string.Format("A target already exists with the name '{0}'. Target names must be unique.",name )) {
-			TargetName = name;			
+			: base(string.Format("A target already exists with the name '{0}'. Target names must be unique.", name)) {
+			TargetName = name;
 		}
-		public string TargetName { get; private set; }
 
+		public string TargetName { get; private set; }
 	}
 
 	public class TargetNotFoundException : PhantomException {
@@ -62,8 +60,11 @@ namespace Phantom.Core {
 	}
 
 	public class ExecutionFailedException : PhantomException {
-		public ExecutionFailedException(int exitCode)
-			: base(string.Format("Operation exited with exit code {0}.", exitCode)) {
+		public ExecutionFailedException(int exitCode, string errortext)
+            : base(string.Format("Operation exited with exit code {0}.\nThe error message was as follows:\n {1}", exitCode, errortext))
+        {
 		}
+
+	   
 	}
 }
