@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Phantom.Core</RootNamespace>
     <AssemblyName>Phantom.Core</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -31,6 +31,7 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -52,35 +53,12 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Boo.Lang, Version=2.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\boo\Boo.Lang.dll</HintPath>
-    </Reference>
-    <Reference Include="Boo.Lang.Compiler, Version=2.0.9.1, Culture=neutral, PublicKeyToken=32c39770e9a21a67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\boo\Boo.Lang.Compiler.dll</HintPath>
-    </Reference>
-    <Reference Include="Boo.Lang.Parser, Version=2.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\boo\Boo.Lang.Parser.dll</HintPath>
-    </Reference>
-    <Reference Include="Boo.Lang.Useful, Version=2.0.0.0, Culture=neutral, PublicKeyToken=32c39770e9a21a67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\boo\Boo.Lang.Useful.dll</HintPath>
-    </Reference>
     <Reference Include="Ionic.Zip, Version=1.8.4.16, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\lib\dotnetzip\Ionic.Zip.dll</HintPath>
     </Reference>
-    <Reference Include="Rhino.DSL, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0b3305902db7183f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\rhino-dsl\Rhino.DSL.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.Composition, Version=2009.22.10.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\lib\mef\System.ComponentModel.Composition.dll</HintPath>
-    </Reference>
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -101,16 +79,19 @@
     <Compile Include="Builtins\AssemblyInfoGenerator.cs" />
     <Compile Include="Builtins\ExecutableTool.cs" />
     <Compile Include="Builtins\FileList.cs" />
+    <Compile Include="Builtins\MSpec.cs" />
+    <Compile Include="Builtins\MSTest.cs" />
     <Compile Include="Builtins\NCover.cs" />
     <Compile Include="Builtins\NCoverExplorer.cs" />
+    <Compile Include="Builtins\NugetPack.cs" />
+    <Compile Include="Builtins\NugetPublish.cs" />
+    <Compile Include="Builtins\NugetPush.cs" />
+    <Compile Include="Builtins\TestRunner.cs" />
     <Compile Include="Builtins\XSLT.cs" />
     <Compile Include="Builtins\XUnit.cs" />
+    <Compile Include="Cleanup.cs" />
     <Compile Include="ExcludeFromCoverageAttribute.cs" />
-    <Compile Include="Language\ExpressionToCallTargetNameStep.cs" />
-    <Compile Include="Language\ExpressionToDependencyNamesStep.cs" />
-    <Compile Include="Language\ExpressionToTargetNameStep.cs" />
-    <Compile Include="Language\IncludeSupportStep.cs" />
-    <Compile Include="Language\IIncludeCompiler.cs" />
+    <Compile Include="IDslFactory.cs" />
     <Compile Include="Builtins\IOFunctions.cs" />
     <Compile Include="Builtins\MSBuild.cs" />
     <Compile Include="Builtins\NUnit.cs" />
@@ -118,20 +99,13 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Builtins\UtilityFunctions.cs" />
     <Compile Include="Glob.cs" />
-    <Compile Include="Integration\ITaskImportBuilder.cs" />
-    <Compile Include="Integration\TaskImportStep.cs" />
-    <Compile Include="Language\AutoRunAllRunnablesStep.cs" />
-    <Compile Include="Language\IRunnable.cs" />
-    <Compile Include="Language\RunnableParser.cs" />
-    <Compile Include="Language\UnescapeNamesStep.cs" />
+    <Compile Include="IRunnable.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="ScriptModel.cs" />
     <Compile Include="PhantomOptions.cs" />
-    <Compile Include="PhantomBase.cs" />
-    <Compile Include="PhantomDslEngine.cs" />
     <Compile Include="PhantomException.cs" />
     <Compile Include="StreamReaderUtility.cs" />
     <Compile Include="Target.cs" />
-    <Compile Include="Builtins\WithMacro.cs" />
     <Compile Include="WrappedFileInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +127,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

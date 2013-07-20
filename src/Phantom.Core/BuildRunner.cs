@@ -23,19 +23,24 @@ namespace Phantom.Core {
 	using System.IO;
 	using System.Linq;
 	using System.Reflection;
-	using Integration;
-	using Rhino.DSL;
 
 	[Export]
 	public class BuildRunner {
-		readonly DslFactory dslFactory;
+		readonly IEnumerable<IDslFactory> dslFactories;
+		readonly Func<TextWriter> log;
+
+		protected TextWriter Log {
+			get { return log();  }
+		}
+
+		public BuildRunner(IEnumerable<IDslFactory> dslFactories, Func<TextWriter> log) {
+			this.dslFactories = dslFactories;
+			this.log = log;
+		}
+
 
 		[ImportingConstructor]
-		public BuildRunner([ImportMany] IEnumerable<ITaskImportBuilder> taskImportBuilders) {
-			dslFactory = new DslFactory();
-			dslFactory.Register<PhantomBase>(
-				new PhantomDslEngine(taskImportBuilders.ToArray())
-			);
+		public BuildRunner([ImportMany] IEnumerable<IDslFactory> dslFactories) : this(dslFactories, ()=>Console.Out) {
 		}
 
 		public static BuildRunner Create() {
@@ -45,21 +50,31 @@ namespace Phantom.Core {
 		}
 
 		public ScriptModel GenerateBuildScript(string path) {
-			var script = dslFactory.Create<PhantomBase>(path);
-			script.Execute();
-			return script.Model;
+			var factory = dslFactories.FirstOrDefault(x => x.CanExecute(path));
+			if (factory == null) throw new ScriptLoadException(path);
+
+			var model = factory.BuildModel(path);
+			return model;
 		}
 
 		public void Execute(PhantomOptions options) {
 			if (options.AttachDebugger && !Debugger.IsAttached)
 				Debugger.Launch();
 
+			// Copy additional args to environment variables
+			//TODO: Don't use Environment to do this...
+			foreach(var pair in options.AdditionalArguments) {
+				Environment.SetEnvironmentVariable(pair.Key, pair.Value);
+			}
+
 			var script = GenerateBuildScript(options.File);
+			script.Log = Log;
 			script.ExecuteTargets(options.TargetNames.ToArray());
+			script.ExecuteCleanups();
 		}
 
 		public void OutputTargets(PhantomOptions options) {
-			Console.WriteLine("Targets in {0}: ", options.File);
+			Log.WriteLine("Targets in {0}: ", options.File);
 			var script = GenerateBuildScript(options.File);
 			var allTargets = script.OrderBy(x => x.Name).ToList();
 
@@ -73,7 +88,7 @@ namespace Phantom.Core {
 					description = description.Substring(0, 47) + "...";
 				}
 
-				Console.WriteLine(name + description);
+				Log.WriteLine(name + description);
 			}
 		}
 	}

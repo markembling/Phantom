@@ -18,12 +18,20 @@ namespace Phantom.Core {
 	using System;
 	using System.Collections;
 	using System.Collections.Generic;
+	using System.IO;
 
 	public class ScriptModel : IEnumerable<Target> {
 		public const string DefaultTargetName = "default";
-		string currentDescription;
+		
+		Func<TextWriter> log = () => Console.Out;
+		
+		public TextWriter Log {
+			get { return log(); }
+			set { log = () => value; }
+		}
 
 		readonly Dictionary<string, Target> targets = new Dictionary<string, Target>();
+		readonly List<Cleanup> cleanups = new List<Cleanup>();
 
 		public Target DefaultTarget {
 			get { return GetTarget(DefaultTargetName); }
@@ -33,7 +41,14 @@ namespace Phantom.Core {
 			return targets.ValueOrDefault(name);
 		}
 
-		public IEnumerator<Target> GetEnumerator() {
+		public IList<Cleanup> GetCleanups() {
+			var localCleanups = new Cleanup[cleanups.Count];
+			cleanups.CopyTo(localCleanups);
+			return localCleanups;
+		}
+
+		public IEnumerator<Target> GetEnumerator()
+		{
 			return targets.Values.GetEnumerator();
 		}
 
@@ -41,16 +56,22 @@ namespace Phantom.Core {
 			return GetEnumerator();
 		}
 
-		public void AddTarget(string name, string[] dependencies, Action block) {
-			var target = new Target(name, block, dependencies, currentDescription, this);
-			currentDescription = null;
+		public void AddTarget(string name, string[] dependencies, Action block, string description) {
+			var target = new Target(name, block, dependencies, description, this);
 			if (targets.ContainsKey(target.Name)) {
 				throw new TargetAlreadyExistsException(target.Name);
 			}
 			targets.Add(target.Name, target);
 		}
 
-		public void ExecuteTargets(params string[] targetNames) {
+		public void AddCleanup(string name, Action block, string description)
+		{
+			var cleanup = new Cleanup(name, block, description, this);
+			cleanups.Add(cleanup);
+		}
+		
+		public void ExecuteTargets(params string[] targetNames)
+		{
 			var targetsToExecute = new List<Target>();
 
 			foreach (var targetName in targetNames) {
@@ -69,20 +90,32 @@ namespace Phantom.Core {
 
 			try {
 				foreach (var target in targetsToExecute) {
-					Console.WriteLine(target.Name + ":");
+					Log.WriteLine(target.Name + ":");
 					target.Execute();
-					Console.WriteLine();
+					Log.WriteLine();
 				}
 			}
 			catch (PhantomException e) {
-				Console.WriteLine(
-					string.Format("Target failed: {0}", e.Message));
+				Log.WriteLine(string.Format("Target failed: {0}", e.Message));
 				Environment.ExitCode = 1;
 			}
 		}
 
-		public void SetCurrentDescription(string description) {
-			currentDescription = description;
+		public void ExecuteCleanups() {
+			foreach (var cleanup in cleanups) {
+				try {
+					Log.Write("cleanup");
+					if (cleanup.Name != null) {
+						Log.Write(" " + cleanup.Name);
+					}
+					Log.WriteLine(":");
+					cleanup.Execute();
+					Log.WriteLine();
+				}
+				catch (Exception e) {
+					Log.WriteLine(string.Format("Cleanup failed: {0}", e.Message));
+				}
+			}
 		}
 	}
 }
