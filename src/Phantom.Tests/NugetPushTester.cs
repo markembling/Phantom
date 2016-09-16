@@ -18,10 +18,10 @@
 			Execute("pushNugetPackageWithoutPackage");
 		}
 
-		[Test, ExpectedException(typeof(InvalidOperationException))]
-		public void Should_throw_exception_when_apikey_is_empty()
+		[Test]
+		public void Should_not_throw_exception_when_apikey_is_empty()
 		{
-			Execute("pushNugetPackageWithoutApiKey");
+            Assert.DoesNotThrow(() => Execute("pushNugetPackageWithoutApiKey"));
 		}
 	}
 }

@@ -35,10 +35,12 @@ namespace Phantom.Core.Builtins {
 			if (string.IsNullOrWhiteSpace(packagePath)) {
 				throw new InvalidOperationException("Nuget package to push must be specified.");
 			}
-			if (string.IsNullOrWhiteSpace(apiKey)) {
-				throw new InvalidOperationException("Nuget api key is required when pushing a package.");
-			}
-			nugetArgs.AppendFormat("push \"{0}\" {1}", Path.GetFullPath(packagePath), apiKey);
+			
+			nugetArgs.AppendFormat("push \"{0}\"", Path.GetFullPath(packagePath));
+
+            if (!string.IsNullOrWhiteSpace(apiKey)) {
+                nugetArgs.AppendFormat(" {0}", apiKey);
+            }
 
 			if (createOnly) {
 				nugetArgs.Append(" -createOnly");
